@@ -28,10 +28,10 @@ int calculateMoonAge() {
 
     //アドカレ新月を基準にする。
     newMoonDate.tm_year = 2023 - 1900;
-    newMoonDate.tm_mon  = 11   - 1;
+    newMoonDate.tm_mon  = 12   - 1;
     newMoonDate.tm_mday = 13;
-    newMoonDate.tm_hour = 18;
-    newMoonDate.tm_min  = 28;
+    newMoonDate.tm_hour = 8;
+    newMoonDate.tm_min  = 32;
     newMoonDate.tm_sec  = 00;
     newMoonDate.tm_isdst = -1;
 
