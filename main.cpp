@@ -4,11 +4,20 @@
 #include <cmath>
 
 
+//曰く、最大2.2日のずれが生じるそうな。
+//目的は創作における現実との大体の一致だから私は構わないが、正確なモノを期待する人は使うべきではないだろう。
+//
+//
+//また、月齢であり、現実で月が見えているかどうかはまた別問題である。
 
-int calculateMoonAge(const std::tm& currentDate) {
-    //基準になる月を指定。
+int calculateMoonAge() {
+
+    // 現在の日付を取得
+    std::time_t t = std::time(nullptr);
+    std::tm currentDate = *std::localtime(&t);
+
+    //基準になる月(新月)を指定。
     std::tm newMoonDate ;
-
     //newMoonDate.tm_year = 2023 - 1900;
     //newMoonDate.tm_mon  = 1   - 1;
     //newMoonDate.tm_mday = 22;
@@ -17,7 +26,7 @@ int calculateMoonAge(const std::tm& currentDate) {
     //newMoonDate.tm_sec  = 00;
     //newMoonDate.tm_isdst = -1;
 
-
+    //アドカレ新月を基準にする。
     newMoonDate.tm_year = 2023 - 1900;
     newMoonDate.tm_mon  = 11   - 1;
     newMoonDate.tm_mday = 13;
@@ -45,12 +54,9 @@ int calculateMoonAge(const std::tm& currentDate) {
 }
 
 int main() {
-    // 現在の日付を取得
-    std::time_t t = std::time(nullptr);
-    std::tm currentDate = *std::localtime(&t);
 
     // 月齢の計算
-    int moonAge = calculateMoonAge(currentDate);
+    int moonAge = calculateMoonAge();
 
     std::cout << "現在の月齢: " << moonAge << "日\n";
 
