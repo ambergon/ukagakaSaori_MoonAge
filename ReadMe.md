@@ -1,4 +1,5 @@
 # ukagakaSaori_MoonAge
+2023アドベントカレンダーに提出を予定しているSAORIの一つ。<br>
 
 
 月齢 を 調べる必要があったので調べたがいい感じのがなかったのでAIに聞いたのだ。
@@ -27,6 +28,11 @@ MoonAge,Saori/ukagakaSaori_MoonAge.dll
 
 ## 参考
 [満月カレンダー（2023年11月）](https://www.arachne.jp/onlinecalendar/mangetsu/2023/11/)
+
+
+## 注意
+このプログラムは自由にゴーストに同梱して配布してもらって構いません。
+このプログラムを使用した事によるいかなる問題や損害について、私は責任を負いません。
 
 
 ## Author
