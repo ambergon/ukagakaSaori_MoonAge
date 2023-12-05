@@ -1,19 +1,54 @@
 
+//ルール
+//半角数字に変換されること。
+//各種引数がすべて合って
+
+
+
+
+
+
+
+
+
+
+
 #include <windows.h>
 
 #include <iostream>
 #include <ctime>
 #include <cmath>
-//stringstream
-#include <iomanip>
 #include <string>
 
+#include <regex>
 
 //#define Debug
 using namespace std;
+
 //{{{
-//月齢計算----------------------------------------------------------
-void calcMoonAge( double& MoonAgeDoublePointer ) {
+// 汎用関数:stringをintに
+int ZenToHan( string str ){
+    //shiftjis
+    str = regex_replace( str , regex( "�O" ) ,"0" );
+    str = regex_replace( str , regex( "�P" ) ,"1" );
+    str = regex_replace( str , regex( "�Q" ) ,"2" );
+    str = regex_replace( str , regex( "�R" ) ,"3" );
+    str = regex_replace( str , regex( "�S" ) ,"4" );
+    str = regex_replace( str , regex( "�T" ) ,"5" );
+    str = regex_replace( str , regex( "�U" ) ,"6" );
+    str = regex_replace( str , regex( "�V" ) ,"7" );
+    str = regex_replace( str , regex( "�W" ) ,"8" );
+    str = regex_replace( str , regex( "�X" ) ,"9" );
+    str = regex_replace( str , regex( "�@" ) ,"" );
+    str = regex_replace( str , regex( " " ) ,"" );
+    int res = atoi( str.c_str() );
+
+    return res ;
+}
+//}}}
+//{{{
+// 月齢計算---------------------------------------------------------
+void nowMoonAge( double& MoonAgeDoublePointer ) {
 
     // 現在の日付を取得
     std::time_t t = std::time(nullptr);
@@ -56,14 +91,56 @@ void calcMoonAge( double& MoonAgeDoublePointer ) {
 }
 //}}}
 //{{{
-//チェック用main関数
+// 指定日月齢計算---------------------------------------------------
+// 引数 : year/mon/day/hour/min/sec
+void calcMoonAge( double& MoonAgeDoublePointer , int year , int month , int day , int hour , int min , int sec) {
+
+    //基準になる月(新月)を指定。
+    std::tm setDate;
+    setDate.tm_year = year  - 1900;
+    setDate.tm_mon  = month - 1;
+    setDate.tm_mday = day  ;
+    setDate.tm_hour = hour ;
+    setDate.tm_min  = min  ;
+    setDate.tm_sec  = sec  ;
+    setDate.tm_isdst = -1;
+
+    //アドカレ新月を基準にする。
+    std::tm newMoonDate ;
+    newMoonDate.tm_year = 2023 - 1900;
+    newMoonDate.tm_mon  = 12   - 1;
+    newMoonDate.tm_mday = 13;
+    newMoonDate.tm_hour = 8;
+    newMoonDate.tm_min  = 32;
+    newMoonDate.tm_sec  = 00;
+    newMoonDate.tm_isdst = -1;
+
+
+    // 現在の日付から新月までの日数を計算
+    std::time_t currentDateSeconds = std::mktime(const_cast<std::tm*>(&setDate));
+    std::time_t newMoonDateSeconds = std::mktime(const_cast<std::tm*>(&newMoonDate));
+
+    double secondsPerDay = 60 * 60 * 24;
+    double daysSinceNewMoon = difftime(currentDateSeconds, newMoonDateSeconds) / secondsPerDay;
+
+    // 月齢の計算
+    double MoonAgeDouble = fmod(daysSinceNewMoon, 29.53058867);
+    if (MoonAgeDouble < 0) {
+        MoonAgeDouble += 29.53058867;
+    }
+    //printf( "A : %lf\n" , MoonAgeDouble );
+    MoonAgeDoublePointer=MoonAgeDouble;
+}
+//}}}
+//{{{
+// チェック用main関数-----------------------------------------------
 int main() {
 
     // 月齢の計算
     int MoonAgeInt ;
     double MoonAgeDouble ;
 
-    calcMoonAge( MoonAgeDouble );
+    nowMoonAge( MoonAgeDouble );
     MoonAgeInt = static_cast<int>(MoonAgeDouble);
 
     string strMoonAgeInt = to_string( MoonAgeInt );
@@ -84,7 +161,7 @@ char* SaoriDirectory;
 
 
 //{{{
-//Load 処理---------------------------------------------------------
+//Load 処理--------------------------------------------------------
 extern "C" __declspec(dllexport) bool __cdecl load(HGLOBAL h, long len){
     //hにはdllまでのLogFilePathが入っている。
     //lenはアドレスの長さ。\0の分は入っていない。
@@ -111,7 +188,7 @@ extern "C" __declspec(dllexport) bool __cdecl load(HGLOBAL h, long len){
 }
 //}}}
 //{{{
-//Unload 処理-------------------------------------------------------
+//Unload 処理------------------------------------------------------
 extern "C" __declspec(dllexport) bool __cdecl unload(void){
     printf( "unload Saori MoonAge\n" );
 
@@ -145,16 +222,12 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
 
     char* Sender    = NULL;
 
-    //{{{
-    //char* Argument0 = NULL;
-    //char* Argument1 = NULL;
-    //char* Argument2 = NULL;
-    //char* Argument3 = NULL;
-    //char* Argument4 = NULL;
-    //char* Argument5 = NULL;
-    //char* Argument6 = NULL;
-    //char* Argument7 = NULL;
-    //}}}
+    char* Argument0 = NULL;
+    char* Argument1 = NULL;
+    char* Argument2 = NULL;
+    char* Argument3 = NULL;
+    char* Argument4 = NULL;
+    char* Argument5 = NULL;
 
     char  sepLine[]    = "\r\n";
     char  sepLR[] = ": ";
@@ -180,51 +253,35 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
         memcpy( L , tp , Lsize);
 
         int Rsize = strlen( tp ) - ( Lsize + strlen( sepLR ) );
-        //char R[ Rsize + 1 ] ;
-        //memset( R , '\0' , Rsize + 1 );
-        //memcpy( R , &tp[ Lsize + strlen( sepLR ) ] , Rsize);
-
-        //printf( "%s\n" , L );
-        //printf( "%s\n" , R );
         
         if ( strcmp( L , "Sender" ) == 0 ) {
             Sender = (char*)calloc( Rsize + 1 , sizeof(char) );
             memcpy( Sender , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
 
-        //今回引数は受けない。
-        //{{{
-        //} else if ( strcmp( L , "Argument0" ) == 0 ) {
-        //    Argument0 = (char*)calloc( Rsize + 1 , sizeof(char) );
-        //    memcpy( Argument0 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
+        } else if ( strcmp( L , "Argument0" ) == 0 ) {
+            Argument0 = (char*)calloc( Rsize + 1 , sizeof(char) );
+            memcpy( Argument0 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
 
-        //} else if ( strcmp( L , "Argument1" ) == 0 ) {
-        //    Argument1 = (char*)calloc( Rsize + 1 , sizeof(char) );
-        //    memcpy( Argument1 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
+        } else if ( strcmp( L , "Argument1" ) == 0 ) {
+            Argument1 = (char*)calloc( Rsize + 1 , sizeof(char) );
+            memcpy( Argument1 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
 
-        //} else if ( strcmp( L , "Argument2" ) == 0 ) {
-        //    Argument2 = (char*)calloc( Rsize + 1 , sizeof(char) );
-        //    memcpy( Argument2 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
+        } else if ( strcmp( L , "Argument2" ) == 0 ) {
+            Argument2 = (char*)calloc( Rsize + 1 , sizeof(char) );
+            memcpy( Argument2 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
 
-        //} else if ( strcmp( L , "Argument3" ) == 0 ) {
-        //    Argument3 = (char*)calloc( Rsize + 1 , sizeof(char) );
-        //    memcpy( Argument3 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
+        } else if ( strcmp( L , "Argument3" ) == 0 ) {
+            Argument3 = (char*)calloc( Rsize + 1 , sizeof(char) );
+            memcpy( Argument3 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
 
-        //} else if ( strcmp( L , "Argument4" ) == 0 ) {
-        //    Argument4 = (char*)calloc( Rsize + 1 , sizeof(char) );
-        //    memcpy( Argument4 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
+        } else if ( strcmp( L , "Argument4" ) == 0 ) {
+            Argument4 = (char*)calloc( Rsize + 1 , sizeof(char) );
+            memcpy( Argument4 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
 
-        //} else if ( strcmp( L , "Argument5" ) == 0 ) {
-        //    Argument5 = (char*)calloc( Rsize + 1 , sizeof(char) );
-        //    memcpy( Argument5 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
+        } else if ( strcmp( L , "Argument5" ) == 0 ) {
+            Argument5 = (char*)calloc( Rsize + 1 , sizeof(char) );
+            memcpy( Argument5 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
 
-        //} else if ( strcmp( L , "Argument6" ) == 0 ) {
-        //    Argument6 = (char*)calloc( Rsize + 1 , sizeof(char) );
-        //    memcpy( Argument6 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
-
-        //} else if ( strcmp( L , "Argument7" ) == 0 ) {
-        //    Argument7 = (char*)calloc( Rsize + 1 , sizeof(char) );
-        //    memcpy( Argument7 , &tp[ Lsize + strlen( sepLR ) ] , Rsize );
-        //}}}
         
         //} else if ( strcomp( L , "" ) == 0 ) {
         }
@@ -232,11 +289,25 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
     }
 
 
+
+
     // 月齢の計算
     int MoonAgeInt ;
     double MoonAgeDouble ;
+    if ( Argument0 != NULL && Argument1 != NULL && Argument2 != NULL && Argument3 != NULL && Argument4 != NULL && Argument5 != NULL ){
 
-    calcMoonAge( MoonAgeDouble );
+        int Arg0 = ZenToHan( Argument0 );
+        int Arg1 = ZenToHan( Argument1 );
+        int Arg2 = ZenToHan( Argument2 );
+        int Arg3 = ZenToHan( Argument3 );
+        int Arg4 = ZenToHan( Argument4 );
+        int Arg5 = ZenToHan( Argument5 );
+        calcMoonAge( MoonAgeDouble , Arg0 , Arg1 , Arg2 , Arg3 , Arg4 , Arg5 );
+
+    } else {
+        nowMoonAge( MoonAgeDouble );
+    }
+
     MoonAgeInt = static_cast<int>(MoonAgeDouble);
 
     string strMoonAgeInt = to_string( MoonAgeInt );
@@ -268,16 +339,12 @@ extern "C" __declspec(dllexport) HGLOBAL __cdecl request(HGLOBAL h, long *len){
     }
     if ( Sender != NULL ){ free( Sender ); }
 
-    //{{{
-    //if ( Argument0 != NULL ){ free( Argument0 ); }
-    //if ( Argument1 != NULL ){ free( Argument1 ); }
-    //if ( Argument2 != NULL ){ free( Argument2 ); }
-    //if ( Argument3 != NULL ){ free( Argument3 ); }
-    //if ( Argument4 != NULL ){ free( Argument4 ); }
-    //if ( Argument5 != NULL ){ free( Argument5 ); }
-    //if ( Argument6 != NULL ){ free( Argument6 ); }
-    //if ( Argument7 != NULL ){ free( Argument7 ); }
-    //}}}
+    if ( Argument0 != NULL ){ free( Argument0 ); }
+    if ( Argument1 != NULL ){ free( Argument1 ); }
+    if ( Argument2 != NULL ){ free( Argument2 ); }
+    if ( Argument3 != NULL ){ free( Argument3 ); }
+    if ( Argument4 != NULL ){ free( Argument4 ); }
+    if ( Argument5 != NULL ){ free( Argument5 ); }
     
     //pluginは2.0で返す。
     //char res_buf[] = "SAORI/1.0 204 No Content";
